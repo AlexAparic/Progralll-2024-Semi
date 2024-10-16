@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        input[type="text"],
+        button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+            border: none;
+        }
+        button[type="submit"] {
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button[type="submit"]:hover {
+            background-color: #218838;
+        }
+        .btn-eliminar {
+            background-color: #dc3545;
+            color: white;
+            font-size: 14px;
+            padding: 8px 12px;
+            margin-left: 10px;
+        }
+        .btn-eliminar:hover {
+            background-color: #c82333;
+        }
+        .btn-editar {
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            padding: 8px 12px;
+        }
+        .btn-editar:hover {
+            background-color: #0056b3;
+        }
+        #buscador {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        #listaUsuarios {
+            list-style-type: none;
+            padding: 0;
+        }
+        #listaUsuarios li {
+            background: #fff;
+            margin: 5px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #listaUsuarios li > div {
+            flex: 1;
+        }
+        #listaUsuarios button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Usuarios</h1>
+        
+        <form id="formUsuario">
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="text" id="direccion" placeholder="Dirección" required>
+            <input type="text" id="telefono" placeholder="Teléfono" required>
+            <button type="submit">Agregar/Guardar Usuario</button>
+        </form>
+        
+        <input type="text" id="buscador" placeholder="Buscar usuarios..." class="form-control my-3">
+        
+        <h3 class="mb-3">Usuarios</h3>
+        
+        <ul id="listaUsuarios" class="list-group"></ul>
+    </div>
+    <script>
+        let usuarioActualId = null; 
+        
+        document.getElementById('formUsuario').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const direccion = document.getElementById('direccion').value;
+            const telefono = document.getElementById('telefono').value;
+            let response;
+
+            if (usuarioActualId) {
+                // Editar usuario
+                response = await fetch(`/api/usuario/${usuarioActualId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre, direccion, telefono })
+                });
+                if (response.ok) {
+                    alert('Usuario actualizado con éxito');
+                } else {
+                    alert('Error al actualizar el usuario');
+                }
+                usuarioActualId = null; // Restablecer después de editar
+            } else {
+                // Agregar nuevo usuario
+                response = await fetch('/api/usuario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre, direccion, telefono })
+                });
+                if (response.ok) {
+                    alert('Usuario agregado con éxito');
+                } else {
+                    alert('Error al agregar el usuario');
+                }
+            }
+            listarUsuarios(); // Refrescar la lista de usuarios
+            document.getElementById('formUsuario').reset(); // Limpiar el formulario
+        });
+
+        async function listarUsuarios() {
+            const response = await fetch('/api/usuarios');
+            const usuarios = await response.json();
+            const lista = document.getElementById('listaUsuarios');
+            lista.innerHTML = '';
+            usuarios.forEach(usuario => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <strong>Nombre:</strong> ${usuario.nombre}<br>
+                        <strong>Dirección:</strong> ${usuario.direccion}<br>
+                        <strong>Teléfono:</strong> ${usuario.telefono}
+                    </div>
+                `;
+                li.setAttribute('data-id', usuario.id);
+                // Botón para eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.innerText = 'Eliminar';
+                btnEliminar.classList.add('btn-eliminar');
+                btnEliminar.onclick = () => eliminarUsuario(usuario.id);
+                li.appendChild(btnEliminar);
+                // Botón para editar
+                const btnEditar = document.createElement('button');
+                btnEditar.innerText = 'Editar';
+                btnEditar.classList.add('btn-editar');
+                btnEditar.onclick = () => editarUsuario(usuario);
+                li.appendChild(btnEditar);
+                lista.appendChild(li);
+            });
+        }
+
+        async function buscarUsuarios() {
+            const busqueda = document.getElementById('buscador').value;
+            const response = await fetch(`/api/buscarUsuarios?q=${busqueda}`);
+            const usuarios = await response.json();
+            const lista = document.getElementById('listaUsuarios');
+            lista.innerHTML = '';
+            usuarios.forEach(usuario => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <strong>Nombre:</strong> ${usuario.nombre}<br>
+                        <strong>Dirección:</strong> ${usuario.direccion}<br>
+                        <strong>Teléfono:</strong> ${usuario.telefono}
+                    </div>
+                `;
+                li.setAttribute('data-id', usuario.id);
+                // Botón para eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.innerText = 'Eliminar';
+                btnEliminar.classList.add('btn-eliminar');
+                btnEliminar.onclick = () => eliminarUsuario(usuario.id);
+                li.appendChild(btnEliminar);
+                // Botón para editar
+                const btnEditar = document.createElement('button');
+                btnEditar.innerText = 'Editar';
+                btnEditar.classList.add('btn-editar');
+                btnEditar.onclick = () => editarUsuario(usuario);
+                li.appendChild(btnEditar);
+                lista.appendChild(li);
+            });
+        }
+
+        document.getElementById('buscador').addEventListener('input', buscarUsuarios);
+
+        async function eliminarUsuario(id) {
+            const response = await fetch(`/api/usuario/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                alert('Usuario eliminado con éxito');
+                listarUsuarios();
+            } else {
+                alert('Error al eliminar el usuario');
+            }
+        }
+
+        function editarUsuario(usuario) {
+            document.getElementById('nombre').value = usuario.nombre;
+            document.getElementById('direccion').value = usuario.direccion;
+            document.getElementById('telefono').value = usuario.telefono;
+            usuarioActualId = usuario.id;
+        }
+
+        listarUsuarios();
+    </script>
+</body>
+</html>
