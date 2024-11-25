@@ -1,0 +1,94 @@
+<form id="frmBusquedaDocente">
+    <div class="card text-bg-dark mb-3">
+        <div class="card-header">
+            <div class="d-flex">
+                Consulta de Docentes
+                <div class="ms-auto">
+                    <input type="text" id="buscadorDocente" placeholder="Buscar docentes..." oninput="buscarDocentes()">
+                    <button type="button" data-form="busqueda_docentes" class="btn-close btn-close-white" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover" id="tblDocentes">
+                <thead>
+                    <tr>
+                        <th>CODIGO</th>
+                        <th>NOMBRE</th>
+                        <th>DIRECCION</th>
+                        <th>TEL</th>
+                        <th>EMAIL</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</form>
+<!-- JavaScript -->
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
+<!-- CSS -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"/>
+<!-- Bootstrap theme -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/bootstrap.min.css"/>
+<script>
+    function eliminarDocente(idDocente) {
+    alertify.confirm(
+        'Confirmar Eliminación',
+        '¿Desea eliminar este registro?',
+        function() {
+            let datos = {
+                accion: "eliminar",
+                idDocente: idDocente,
+            };
+            enviarDatosDocente(datos);
+            
+        },
+        function() {
+            alertify.error('Eliminación cancelada');
+        }
+    );
+}
+
+
+    function consultarDocentes(){
+        fetch('consultar_docentes/')
+        .then(res => res.json())
+        .then(data => {
+            mostrarFilasDocentes(data);
+        })
+        .catch(err => console.log(err));
+    }
+
+    function buscarDocentes(){
+        const filtro = document.getElementById('buscadorDocente').value.toLowerCase();
+        fetch(`consultar_docentes/?q=${filtro}`)
+        .then(res => res.json())
+        .then(data => {
+            mostrarFilasDocentes(data);
+        })
+        .catch(err => console.log(err));
+    }
+
+    function mostrarFilasDocentes(data = []){
+        let filas = '';
+        data.forEach(docente => {
+            filas += `
+                <tr onClick='modificarDocente(${JSON.stringify(docente)})'>
+                    <td>${docente.codigo}</td>
+                    <td>${docente.nombre}</td>
+                    <td>${docente.direccion}</td>
+                    <td>${docente.telefono}</td>
+                    <td>${docente.email}</td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger" onClick='eliminarDocente(${docente.id})'>DEL</button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.querySelector('#tblDocentes > tbody').innerHTML = filas;
+    }
+
+    consultarDocentes();
+</script>

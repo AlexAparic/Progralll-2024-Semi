@@ -1,0 +1,91 @@
+<form id="frmBusquedaAlumno">
+    <div class="card text-bg-dark mb-3">
+        <div class="card-header">
+            <div class="d-flex">
+                Consulta de Alumnos
+                <div class="ms-auto">
+                    <input type="text" id="buscador" placeholder="Buscar alumnos..." oninput="buscarAlumnos()">
+                    <button type="button" data-form="busqueda_alumnos" class="btn-close btn-close-white" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover" id="tblAlumnos">
+                <thead>
+                    <tr>
+                        <th>CODIGO</th>
+                        <th>NOMBRE</th>
+                        <th>DIRECCION</th>
+                        <th>TEL</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</form>
+<!-- JavaScript -->
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
+<!-- CSS -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"/>
+<!-- Bootstrap theme -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/bootstrap.min.css"/>
+<script>
+    function eliminarAlumno(idAlumno) {
+        alertify.confirm(
+            'Confirmar Eliminación',
+            '¿Desea eliminar este registro?',
+            function() {
+                let datos = {
+                    accion: "eliminar",
+                    idAlumno: idAlumno,
+                };
+                enviarDatosAlumno(datos);
+            },
+            function() {
+                alertify.error('Eliminación cancelada');
+            }
+        );
+    }
+    
+
+    function consultarAlumnos(){
+        fetch('consultar_alumnos/')
+        .then(res => res.json())
+        .then(data => {
+            mostrarFilasAlumnos(data);
+        })
+        .catch(err => console.log(err));
+    }
+
+    function buscarAlumnos(){
+        const filtro = document.getElementById('buscador').value.toLowerCase();
+        fetch(`consultar_alumnos/?q=${filtro}`)
+        .then(res => res.json())
+        .then(data => {
+            mostrarFilasAlumnos(data);
+        })
+        .catch(err => console.log(err));
+    }
+
+    function mostrarFilasAlumnos(data = []){
+        let filas = '';
+        data.forEach(alumno => {
+            filas += `
+                <tr onClick='modificarAlumno(${JSON.stringify(alumno)})'>
+                    <td>${alumno.codigo}</td>
+                    <td>${alumno.nombre}</td>
+                    <td>${alumno.direccion}</td>
+                    <td>${alumno.telefono}</td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger" onClick='eliminarAlumno(${alumno.id})'>DEL</button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.querySelector('#tblAlumnos > tbody').innerHTML = filas;
+    }
+
+    consultarAlumnos();
+</script>

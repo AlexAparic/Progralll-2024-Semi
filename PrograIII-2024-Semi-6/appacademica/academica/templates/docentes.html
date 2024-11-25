@@ -1,0 +1,154 @@
+<form id="frmDocente" data-accion="nuevo" data-iddocente="0">
+    <div class="card text-bg-dark mb-3" style="min-width: 700px;">
+        <div class="card-header">
+            <div class="d-flex">
+                Registro de Docentes
+                <div class="ms-auto">
+                    <button type="button" data-form="docentes" class="btn-close btn-close-white" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row p-1">
+                <div class="col-3 col-md-2">CODIGO </div>
+                <div class="col-9 col-md-4">
+                    <input type="text" class="form-control" id="txtCodigoDocente" name="txtCodigoDocente" required>
+                </div>
+            </div>
+            <div class="row p-1">
+                <div class="col-3 col-md-2">NOMBRE </div>
+                <div class="col-9 col-md-6">
+                    <input type="text" class="form-control" id="txtNombreDocente" name="txtNombreDocente" required>
+                </div>
+            </div>
+            <div class="row p-1">
+                <div class="col-3 col-md-2">DIRECCION</div>
+                <div class="col-9 col-md-10">
+                    <input type="text" class="form-control" id="txtDireccionDocente" name="txtDireccionDocente" required>
+                </div>
+            </div>
+            <div class="row p-1">
+                <div class="col-3 col-md-2">TELEFONO </div>
+                <div class="col-9 col-md-4">
+                    <input type="text" class="form-control" id="txtTelefonoDocente" name="txtTelefonoDocente" required>
+                </div>
+            </div>
+            <div class="row p-1">
+                <div class="col-3 col-md-2">EMAIL </div>
+                <div class="col-9 col-md-4">
+                    <input type="text" class="form-control" id="txtEmailDocente" name="txtEmailDocente" required>
+                </div>
+            </div>
+            <div class="row p-1">
+                <div class="col-12 col-md-4 text-center d-grid gap-2">
+                    <button type="submit" class="btn btn-outline-primary">Guardar</button>
+                </div>
+                <div class="col-12 col-md-4 text-center d-grid gap-2">
+                    <button type="reset" class="btn btn-outline-warning">Nuevo</button>
+                </div>
+                <div class="col-12 col-md-4 text-center d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success" onclick="abrirVentana('busqueda_docentes')">BUSCAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<!-- JavaScript -->
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/alertify.min.js"></script>
+<!-- CSS -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/alertify.min.css"/>
+<!-- Bootstrap theme -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.14.0/build/css/themes/bootstrap.min.css"/>
+<script>
+    function agregarValidacion(inputElement, regex, mensaje) {
+    inputElement.addEventListener('input', function(e) {
+       
+        const originalValue = e.target.value;
+
+        
+        e.target.value = e.target.value.replace(regex, '');
+
+        
+        if (e.target.value !== originalValue) {
+            
+            alertify.notify(mensaje, 'warning', 2, function(){ 
+                console.log('Mensaje cerrado'); 
+            });
+        }
+    });
+    }
+
+
+    agregarValidacion(document.querySelector('#txtCodigoDocente'), /[^a-zA-Z0-9]/g, 'Solo se permiten letras y números.');
+    agregarValidacion(document.querySelector('#txtNombreDocente'), /[^a-zA-Z\s]/g, 'Solo se permiten letras.');
+    agregarValidacion(document.querySelector('#txtDireccionDocente'), /[^a-zA-Z0-9\s]/g, 'Solo se permiten letras y números.');
+    agregarValidacion(document.querySelector('#txtTelefonoDocente'), /[^0-9-]/g, 'Solo se permiten números y guiones (-).');
+    agregarValidacion(document.querySelector('#txtEmailDocente'), /[^a-zA-Z0-9@._]/g, 'Formato de email no válido.');
+
+    
+    document.querySelector('#frmDocente').addEventListener('submit', (e) => {
+        e.preventDefault(); 
+        let datos = {
+            accion: frmDocente.dataset.accion,
+            idDocente: frmDocente.dataset.iddocente,
+            codigo: document.getElementById('txtCodigoDocente').value,
+            nombre: document.getElementById('txtNombreDocente').value,
+            direccion: document.getElementById('txtDireccionDocente').value,
+            telefono: document.getElementById('txtTelefonoDocente').value,
+            email: document.getElementById('txtEmailDocente').value
+        };
+        enviarDatosDocente(datos); 
+    });
+
+    
+    function enviarDatosDocente(datos) {
+        fetch('guardar_docente/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify(datos)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.msg === 'ok') {
+                
+                if (data.accion_realizada === 'guardado') {
+                    alertify.success('Docente guardado con éxito');
+                } else if (data.accion_realizada === 'modificado') {
+                    alertify.success('Docente modificado con éxito');
+                } else if (data.accion_realizada === 'eliminado') {
+                    alertify.success('Docente eliminado con éxito');
+                }
+
+                consultarDocentes(); 
+                limpiarDatosDocentes(); 
+            }
+        })
+        .catch(err => console.log(err));
+    }
+
+    
+    function modificarDocente(docente) {
+        frmDocente.dataset.accion = 'modificar';
+        frmDocente.dataset.iddocente = docente.id;
+        document.getElementById('txtCodigoDocente').value = docente.codigo;
+        document.getElementById('txtNombreDocente').value = docente.nombre;
+        document.getElementById('txtDireccionDocente').value = docente.direccion;
+        document.getElementById('txtTelefonoDocente').value = docente.telefono;
+        document.getElementById('txtEmailDocente').value = docente.email;
+    }
+
+    
+    function limpiarDatosDocentes() {
+        frmDocente.dataset.accion = 'nuevo';
+        frmDocente.dataset.iddocente = '';
+        document.getElementById('txtCodigoDocente').value = '';
+        document.getElementById('txtNombreDocente').value = '';
+        document.getElementById('txtDireccionDocente').value = '';
+        document.getElementById('txtTelefonoDocente').value = '';
+        document.getElementById('txtEmailDocente').value = '';
+    }
+
+
+</script>
